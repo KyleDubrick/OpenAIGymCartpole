@@ -2,7 +2,7 @@ import gym
 import tensorflow as tf
 import numpy as np
 import random as rand
-import copy
+import keras from tensorflow
 
 x = tf.placeholder(tf.float32, shape=[4])
 x_ = tf.reshape(x, [1, 4])
@@ -101,9 +101,9 @@ for i_episode in range(num_episodes):
     targetQ = []
     target_n = 0
     for t in range(200):
-        # env.render()
+        env.render()
         a, allQ = sess.run([predict, Q_out], feed_dict={x: observation})
-        # print(allQ)
+        print(allQ)
         if np.random.rand(1) < e:
             a[0] = env.action_space.sample()
         observation1, r, done, _ = env.step(a[0])
@@ -117,7 +117,7 @@ for i_episode in range(num_episodes):
         rAll += 1
         targetQ[0, a[0]] = r
         if done and t < 199:
-            targetQ[0, 1 - a[0]] = -r/20
+            targetQ[0, 1 - a[0]] -= r/20
         train_step.run(session=sess, feed_dict={x: observation, nextQ: targetQ})
         if target_n >= 5 or done == 1:
             t_train_step.run(session=sess, feed_dict={x: observation, nextQ: targetQ})
@@ -142,7 +142,7 @@ for i_episode in range(num_episodes):
         observation = observation1
         if done:
             print("Episode finished after {} timesteps".format(t+1))
-            e = 1./((i_episode/50) + 20)
+            e = 1./((i_episode/50) + 1)
             break
     hundredmean[count % 100] = rAll
     meanCount = 0
@@ -152,9 +152,7 @@ for i_episode in range(num_episodes):
             meanCount += 1
     mean /= meanCount
     count += 1
-    # print("Mean after last ", meanCount, " trials: ", mean, " at episode: ", i_episode)
-    if mean >= 195:
-        print("Success at episode: ", i_episode)
+    print("Mean after last ", meanCount, " trials: ", mean, " at episode :", i_episode)
     rList.append(rAll)
     mean = 0
 
