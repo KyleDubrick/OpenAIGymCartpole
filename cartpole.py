@@ -9,7 +9,7 @@ x_ = tf.reshape(x, [1, 4])
 
 
 def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev=0.5, mean=1)
+    initial = tf.truncated_normal(shape, stddev=1, mean=0.2)
     return tf.Variable(initial)
 
 
@@ -103,7 +103,7 @@ for i_episode in range(num_episodes):
     for t in range(200):
         env.render()
         a, allQ = sess.run([predict, Q_out], feed_dict={x: observation})
-        print(allQ)
+        # print(allQ)
         if np.random.rand(1) < e:
             a[0] = env.action_space.sample()
         observation1, r, done, _ = env.step(a[0])
@@ -112,8 +112,8 @@ for i_episode in range(num_episodes):
         targetQ = allQ
         intermediate = minQ1
         if t < 199:
-            intermediate = intermediate + done*100*y
-        r = intermediate
+            intermediate = intermediate + done*5
+        r = y*intermediate
         rAll += 1
         targetQ[0, a[0]] = r
         train_step.run(session=sess, feed_dict={x: observation, nextQ: targetQ})
@@ -149,7 +149,7 @@ for i_episode in range(num_episodes):
             meanCount += 1
     mean /= meanCount
     count += 1
-    # print("Mean after last ", meanCount, " trials: ", mean, " at episode: ", i_episode)
+    print("Mean after last ", meanCount, " trials: ", mean, " at episode: ", i_episode)
     if mean >= 195:
         print("Success at episode: ", i_episode)
     rList.append(rAll)
