@@ -9,7 +9,7 @@ x_ = tf.reshape(x, [1, 4])
 
 
 def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev=1)
+    initial = tf.truncated_normal(shape, stddev=0.5, mean=1)
     return tf.Variable(initial)
 
 
@@ -32,7 +32,7 @@ h_2 = tf.nn.relu(tf.matmul(h_1, W_2))
 W_3 = weight_variable([10, 2])
 Q_out = tf.matmul(h_2, W_3)
 
-predict = tf.argmax(Q_out, 1)
+predict = tf.argmin(Q_out, 1)
 
 nextQ = tf.placeholder(tf.float32, [1, 2])
 
@@ -59,7 +59,7 @@ t_h_2 = tf.nn.relu(tf.matmul(t_h_1, t_W_2))
 t_W_3 = weight_variable([10, 2])
 t_Q_out = tf.matmul(t_h_2, t_W_3)
 
-t_predict = tf.argmax(t_Q_out, 1)
+t_predict = tf.argmin(t_Q_out, 1)
 # Hubert loss function
 """ 
 t_err = tf.abs(nextQ - t_Q_out)
@@ -101,42 +101,39 @@ for i_episode in range(num_episodes):
     targetQ = []
     target_n = 0
     for t in range(200):
-        # env.render()
+        env.render()
         a, allQ = sess.run([predict, Q_out], feed_dict={x: observation})
-        # print(allQ)
+        print(allQ)
         if np.random.rand(1) < e:
             a[0] = env.action_space.sample()
         observation1, r, done, _ = env.step(a[0])
         Q1 = sess.run(t_Q_out, feed_dict={x: observation1})
-        maxQ1 = np.max(Q1)
+        minQ1 = np.min(Q1)
         targetQ = allQ
-        intermediate = maxQ1
+        intermediate = minQ1
         if t < 199:
-            intermediate = intermediate - done*1000
-        r = r + y*intermediate
+            intermediate = intermediate + done*100*y
+        r = intermediate
         rAll += 1
         targetQ[0, a[0]] = r
-        if done and t < 199:
-            targetQ[0, 1 - a[0]] = -r/20
         train_step.run(session=sess, feed_dict={x: observation, nextQ: targetQ})
         if target_n >= 5 or done == 1:
             t_train_step.run(session=sess, feed_dict={x: observation, nextQ: targetQ})
             target_n = 0
         else:
             target_n += 1
-        if experiences < 50:
-            batch = expList[:experiences]
+        if experiences < 500:
+            batch = None
         elif experiences < 1000:
             batch = rand.sample(expList[:experiences], 50)
         else:
             batch = rand.sample(expList, 50)
-        for experience in batch:
-            allQ = sess.run(Q_out, feed_dict={x: experience[0]})
-            Q1 = sess.run(t_Q_out, feed_dict={x: experience[1]})
-            maxQ1 = np.max(Q1)
-            newtargetQ = allQ
-            newtargetQ[0, experience[2]] = experience[3]
-            train_step.run(session=sess, feed_dict={x: experience[0], nextQ: newtargetQ})
+        if experiences >= 500:
+            for experience in batch:
+                allQ = sess.run(Q_out, feed_dict={x: experience[0]})
+                newtargetQ = allQ
+                newtargetQ[0, experience[2]] = experience[3]
+                train_step.run(session=sess, feed_dict={x: experience[0], nextQ: newtargetQ})
         expList[experiences % 1000] = [observation, observation1, a[0], r]
         experiences += 1
         observation = observation1

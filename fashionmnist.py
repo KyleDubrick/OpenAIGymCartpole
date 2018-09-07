@@ -27,7 +27,7 @@ model.compile(optimizer=tf.train.AdamOptimizer(),
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-model.fit(train_images, train_labels, epochs=10)
+model.fit(train_images, train_labels, epochs=5)
 
 test_loss, test_acc = model.evaluate(test_images, test_labels)
 
@@ -68,6 +68,14 @@ def plot_value_array(i, predictions_array, true_label):
     thisplot[predicted_label].set_color('red')
     thisplot[true_label].set_color('blue')
 
+
+i = 0
+plt.figure(figsize=(6,3))
+plt.subplot(1,2,1)
+plot_image(i, predictions, test_labels, test_images)
+plt.subplot(1,2,2)
+plot_value_array(i, predictions,  test_labels)
+
 # Plot the first X test images, their predicted label, and the true label
 # Color correct predictions in blue, incorrect predictions in red
 num_rows = 5
@@ -79,3 +87,6 @@ for i in range(num_images):
     plot_image(i, predictions, test_labels, test_images)
     plt.subplot(num_rows, 2 * num_cols, 2 * i + 2)
     plot_value_array(i, predictions, test_labels)
+
+plt.show()
+
